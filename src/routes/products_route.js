@@ -1,5 +1,4 @@
 import express from 'express';
-import { products } from '../../data/productMockUpData.js';
 import { Product } from '../models/product.model.js';
 import { BadRequestException } from '../errors/bad-request-exception.js';
 
