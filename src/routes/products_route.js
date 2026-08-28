@@ -36,9 +36,11 @@ productRouter.get('/', async (req, res, next) => {
     }
 
     const products = await Product.find();
+    const startIndex = page - 1;
+    const list = products.slice(startIndex, startIndex + pageSize);
 
     res.status(200).json({
-      list: products,
+      list,
       totalCount: products.length,
     });
   } catch (error) {
