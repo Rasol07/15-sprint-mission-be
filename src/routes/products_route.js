@@ -32,13 +32,17 @@ productRouter.get('/', async (req, res, next) => {
       throw new BadRequestException('keyword는 24자 이하여야 합니다');
     }
 
-    const products = await Product.find();
-    const startIndex = (page - 1) * pageSize;
-    const list = products.slice(startIndex, startIndex + pageSize);
+    const sortOption = standard === 'recent' ? { createdAt: -1 } : {};
+    const list = await Product.find()
+      .sort(sortOption)
+      .skip((page - 1) * pageSize)
+      .limit(pageSize);
+
+    const totalCount = await Product.countDocuments();
 
     res.status(200).json({
       list,
-      totalCount: products.length,
+      totalCount,
     });
   } catch (error) {
     return next(error);
