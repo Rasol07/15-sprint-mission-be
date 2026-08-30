@@ -1,6 +1,7 @@
 import express from 'express';
 import { Product } from '../models/product.model.js';
 import { BadRequestException } from '../errors/bad-request-exception.js';
+import { NotFoundException } from '../errors/not-found-exception.js';
 
 export const productRouter = express.Router();
 
@@ -18,21 +19,17 @@ productRouter.get('/', async (req, res, next) => {
     }
 
     if (pageSize <= 0) {
-      return res.status(400).json({
-        message: 'pageSize는 1 이상이여야 합니다',
-      });
+      throw new BadRequestException('pageSize는 1 이상이여야 합니다');
     }
 
     if (!['recent', 'favorite'].includes(standard)) {
-      return res.status(400).json({
-        message: 'standard는 recent 혹은 favorite 이여야 합니다',
-      });
+      throw new BadRequestException(
+        'standard는 recent 혹은 favorite 이여야 합니다',
+      );
     }
 
     if (keyword.length >= 25) {
-      return res.status(400).json({
-        message: 'keyword는 24자 이하여야 합니다',
-      });
+      throw new BadRequestException('keyword는 24자 이하여야 합니다');
     }
 
     const products = await Product.find();
@@ -48,19 +45,78 @@ productRouter.get('/', async (req, res, next) => {
   }
 });
 
-productRouter.post('/', async (req, res, _next) => {
-  const { name, description, price, tags } = req.body ?? {};
-  // 값이 다 비어있는 경우 - 400
-  if (!name && !description && !price && !tags) {
-    return res.status(400).json({
-      message: '입력란에 하나 이상 입력해주세요',
+productRouter.post('/', async (req, res, next) => {
+  try {
+    const { name, description, price, tags } = req.body ?? {};
+    // 값이 다 비어있는 경우 - 400
+    if (!name && !description && !price && !tags) {
+      throw new BadRequestException('입력란에 하나 이상 입력해주세요');
+    }
+
+    const newProduct = new Product({ name, description, price, tags });
+    await newProduct.save();
+
+    res.status(201).json({
+      product: newProduct,
     });
+  } catch (error) {
+    return next(error);
   }
+});
 
-  const newProduct = new Product({ name, description, price, tags });
-  await newProduct.save();
+productRouter.patch('/:userId', async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const target = await Product.findOne({ _id: userId });
+    if (!target) {
+      throw new NotFoundException('상품을 찾을 수 없습니다');
+    }
 
-  res.status(201).json({
-    list: newProduct,
-  });
+    const { name, description, price, tags } = req.body ?? {};
+    if (!name && !description && !price && !tags) {
+      throw new BadRequestException('입력란에 하나 이상 입력해주세요');
+    }
+
+    const update = {};
+    if (name) {
+      update.name = name;
+    }
+    if (description) {
+      update.description = description;
+    }
+    if (price) {
+      update.price = price;
+    }
+    if (tags) {
+      update.tags = tags;
+    }
+
+    const updateProduct = await Product.findByIdAndUpdate(userId, update, {
+      returnDocument: 'after',
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      product: updateProduct,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+productRouter.delete('/:userId', async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const deleteProduct = await Product.findByIdAndDelete(userId);
+
+    if (!deleteProduct) {
+      throw new NotFoundException('상품을 찾을 수 없습니다.');
+    }
+
+    res.status(200).json({
+      product: deleteProduct,
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
