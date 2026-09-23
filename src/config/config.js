@@ -5,7 +5,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().min(10).max(65535),
   DATABASE_URL: z
     .url()
-    .refind(
+    .refine(
       (url) => url.startsWith('postgresql:') || url.startsWith('postgres:'),
       'PostgreSQL 연결 URL 이여야 합니다.',
     ),
