@@ -1,7 +1,9 @@
-import mongoose from 'mongoose';
-import { config } from '../config/config.js';
+import { config } from '#config';
+import { PrismaClient } from '#generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-export const connectDB = async () => {
-  await mongoose.connect(config.MONGO_URI, { serverSelectionTimeoutMS: 5000 });
-  console.log('MongoDB 연결됨');
-};
+const adapter = new PrismaPg({
+  connectionString: config.DATABASE_URL,
+});
+
+export const prisma = new PrismaClient({ adapter });
