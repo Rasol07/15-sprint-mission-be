@@ -11,7 +11,7 @@ productRouter.get('/', async (req, res, next) => {
   try {
     const page = Number(req.query.page ?? 1);
     const pageSize = Number(req.query.pageSize ?? 10);
-    const standard = req.query.standard ?? 'recent';
+    const orderBy = req.query.orderBy ?? 'recent';
     const keyword = req.query.keyword ?? '';
 
     if (page <= 0) {
@@ -22,7 +22,7 @@ productRouter.get('/', async (req, res, next) => {
       throw new BadRequestException('pageSize는 1 이상이여야 합니다');
     }
 
-    if (!['recent', 'favorite'].includes(standard)) {
+    if (!['recent', 'favorite'].includes(orderBy)) {
       throw new BadRequestException(
         'standard는 recent 혹은 favorite 이여야 합니다',
       );
@@ -32,13 +32,15 @@ productRouter.get('/', async (req, res, next) => {
       throw new BadRequestException('keyword는 24자 이하여야 합니다');
     }
 
-    const sortOption = standard === 'recent' ? { createdAt: -1 } : {};
-    const list = await Product.find()
+    const filter = keyword ? { name: { $regex: keyword, $options: 'i' } } : {};
+
+    const sortOption = orderBy === 'recent' ? { createdAt: -1 } : {};
+    const list = await Product.find(filter)
       .sort(sortOption)
       .skip((page - 1) * pageSize)
       .limit(pageSize);
 
-    const totalCount = await Product.countDocuments();
+    const totalCount = await Product.countDocuments(filter);
 
     res.status(200).json({
       list,
