@@ -1,128 +1,115 @@
-// import express from 'express';
-// import { Product } from '../models/product.model.js';
-// import { BadRequestException } from '../errors/bad-request-exception.js';
-// import { NotFoundException } from '../errors/not-found-exception.js';
+import expressd from 'express';
+import { productRepository } from '../repositories/product.repository.js';
 
-// export const productRouter = express.Router();
+export const productRouter = expressd.Router();
 
-// // get
-// // {list : [], totalCount : Number}
-// productRouter.get('/', async (req, res, next) => {
-//   try {
-//     const page = Number(req.query.page ?? 1);
-//     const pageSize = Number(req.query.pageSize ?? 10);
-//     const orderBy = req.query.orderBy ?? 'recent';
-//     const keyword = req.query.keyword ?? '';
+productRouter.get('/:productId', async (req, res, next) => {
+  try {
+    const productId = req.params.productId;
+    const product = await productRepository.findById(productId);
 
-//     if (page <= 0) {
-//       throw new BadRequestException('page는 1이상 이여야 합니다');
-//     }
+    res.status(200).json({
+      success: true,
+      data: product,
+      message: '상품을 찾았습니다.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-//     if (pageSize <= 0) {
-//       throw new BadRequestException('pageSize는 1 이상이여야 합니다');
-//     }
+productRouter.get('/', async (req, res, next) => {
+  try {
+    const { orderBy, keyword } = req.query;
 
-//     if (!['recent', 'favorite'].includes(orderBy)) {
-//       throw new BadRequestException(
-//         'standard는 recent 혹은 favorite 이여야 합니다',
-//       );
-//     }
+    const page = Number(req.query.page ?? 1);
+    const limit = Number(req.query.limit ?? 10);
+    if (
+      !Number.isSafeInteger(page) ||
+      !Number.isSafeInteger(limit) ||
+      page < 1 ||
+      limit < 1 ||
+      limit > 100
+    ) {
+      return res.status(400).json({
+        message: 'page는 양의 정수, limit은 1~100의 정수여야 합니다.',
+      });
+    }
 
-//     if (keyword.length >= 25) {
-//       throw new BadRequestException('keyword는 24자 이하여야 합니다');
-//     }
+    const products = await productRepository.findAll(
+      page,
+      limit,
+      orderBy,
+      keyword,
+    );
 
-//     const filter = keyword ? { name: { $regex: keyword, $options: 'i' } } : {};
+    res.status(200).json({
+      success: true,
+      data: products,
+      count: products.length,
+      message: '상품을 찾았습니다.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-//     const sortOption = orderBy === 'recent' ? { createdAt: -1 } : {};
-//     const list = await Product.find(filter)
-//       .sort(sortOption)
-//       .skip((page - 1) * pageSize)
-//       .limit(pageSize);
+productRouter.post('/', async (req, res, next) => {
+  try {
+    const data = req.body; // 나중에 검증 하는 거 zod 에 넣어야 함
+    const newProduct = await productRepository.create(data);
+    res.status(200).json({
+      success: true,
+      data: newProduct,
+      message: '상품 등록에 성공했습니다.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-//     const totalCount = await Product.countDocuments(filter);
+productRouter.patch('/:productId', async (req, res, next) => {
+  try {
+    const productId = req.params.productId;
+    if (!productId) {
+      res.status(404).json({
+        success: false,
+        message: '상품 아이디를 찾을 수 없습니다.',
+      });
+    }
+    const data = req.body;
+    const updateData = await productRepository.update(productId, data);
+    if (!updateData) {
+      res.status(404).json({
+        success: false,
+        message: '상품을 찾을 수 없습니다.',
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: '상품 수정에 성공했습니다.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-//     res.status(200).json({
-//       list,
-//       totalCount,
-//     });
-//   } catch (error) {
-//     return next(error);
-//   }
-// });
+productRouter.delete('/:productId', async (req, res, next) => {
+  try {
+    const productId = req.params.productId;
+    if (!productId) {
+      res.status(404).json({
+        success: false,
+        message: '상품 아이디를 찾을 수 없습니다.',
+      });
+    }
 
-// productRouter.post('/', async (req, res, next) => {
-//   try {
-//     const { name, description, price, tags } = req.body ?? {};
-//     // 값이 다 비어있는 경우 - 400
-//     if (!name && !description && !price && !tags) {
-//       throw new BadRequestException('입력란에 하나 이상 입력해주세요');
-//     }
-
-//     const newProduct = new Product({ name, description, price, tags });
-//     await newProduct.save();
-
-//     res.status(201).json({
-//       product: newProduct,
-//     });
-//   } catch (error) {
-//     return next(error);
-//   }
-// });
-
-// productRouter.patch('/:userId', async (req, res, next) => {
-//   try {
-//     const { userId } = req.params;
-//     const target = await Product.findOne({ _id: userId });
-//     if (!target) {
-//       throw new NotFoundException('상품을 찾을 수 없습니다');
-//     }
-
-//     const { name, description, price, tags } = req.body ?? {};
-//     if (!name && !description && !price && !tags) {
-//       throw new BadRequestException('입력란에 하나 이상 입력해주세요');
-//     }
-
-//     const update = {};
-//     if (name) {
-//       update.name = name;
-//     }
-//     if (description) {
-//       update.description = description;
-//     }
-//     if (price) {
-//       update.price = price;
-//     }
-//     if (tags) {
-//       update.tags = tags;
-//     }
-
-//     const updateProduct = await Product.findByIdAndUpdate(userId, update, {
-//       returnDocument: 'after',
-//       runValidators: true,
-//     });
-
-//     res.status(200).json({
-//       product: updateProduct,
-//     });
-//   } catch (error) {
-//     return next(error);
-//   }
-// });
-
-// productRouter.delete('/:userId', async (req, res, next) => {
-//   try {
-//     const { userId } = req.params;
-//     const deleteProduct = await Product.findByIdAndDelete(userId);
-
-//     if (!deleteProduct) {
-//       throw new NotFoundException('상품을 찾을 수 없습니다.');
-//     }
-
-//     res.status(200).json({
-//       product: deleteProduct,
-//     });
-//   } catch (error) {
-//     return next(error);
-//   }
-// });
+    const deleteProduct = await productRepository.remove(productId);
+    res.status(200).json({
+      success: true,
+      message: '상품 삭제에 성공했습니다.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});

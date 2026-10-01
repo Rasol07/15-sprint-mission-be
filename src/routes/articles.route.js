@@ -24,12 +24,6 @@ articleRouter.get('/', async (req, res, next) => {
 
     const page = Number(req.query.page ?? 1);
     const limit = Number(req.query.limit ?? 10);
-    const articles = await articlesRepository.findAll(
-      page,
-      limit,
-      orderBy,
-      keyword,
-    );
     if (
       !Number.isSafeInteger(page) ||
       !Number.isSafeInteger(limit) ||
@@ -41,6 +35,12 @@ articleRouter.get('/', async (req, res, next) => {
         message: 'page는 양의 정수, limit은 1~100의 정수여야 합니다.',
       });
     }
+    const articles = await articlesRepository.findAll(
+      page,
+      limit,
+      orderBy,
+      keyword,
+    );
 
     res.status(200).json({
       success: true,
