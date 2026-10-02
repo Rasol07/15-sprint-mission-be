@@ -1,0 +1,130 @@
+import express from 'express';
+import { commentRepository } from '../repositories/comment.repository.js';
+
+export const commentRouter = express.Router({ mergeParams: true });
+
+commentRouter.get('/:commentId', async (req, res, next) => {
+  try {
+    const commentId = req.params.commentId;
+    if (!commentId) {
+      res.status(400).json({
+        success: false,
+        message: '댓글 아이디가 없습니다.',
+      });
+    }
+
+    const comment = await commentRepository.findById(commentId);
+    res.status(200).json({
+      success: true,
+      data: comment,
+      message: '댓글을 찾았습니다.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+commentRouter.get('/', async (req, res, next) => {
+  try {
+    const { articleId, productId } = req.params;
+    const { createdAt, id } = req.query;
+
+    const cursor =
+      createdAt != null && id != null ? { createdAt, id } : undefined;
+    console.log(cursor);
+    // if (!createdAt && !id) {
+    //   if (
+    //     typeof createdAt !== 'string' ||
+    //     typeof id !== 'string' ||
+    //     id.trim() === '' ||
+    //     Number.isNaN(new Date(createdAt).getTime())
+    //   ) {
+    //     return res.status(400).json({
+    //       message: '유효한 cursorCreatedAt과 cursorId를 함께 전달해 주세요.',
+    //     });
+    //   }
+
+    //   cursor = {
+    //     createdAt,
+    //     id,
+    //   };
+    // }
+
+    const target = articleId ? { articleId } : { productId };
+    console.log(target);
+    const comments = await commentRepository.findAll(target, cursor);
+
+    res.status(200).json({
+      success: true,
+      data: comments,
+      length: comments.length,
+      message: '댓글 목록 조회에 성공했습니다.',
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+commentRouter.post('/', async (req, res, next) => {
+  try {
+    const { productId, articleId } = req.params;
+    console.log(productId, articleId);
+    const { content } = req.body;
+    const newData = await commentRepository.create(
+      content,
+      productId,
+      articleId,
+    );
+    res.status(200).json({
+      success: true,
+      data: newData,
+      message: '댓글 작성에 성공했습니다.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+commentRouter.patch('/:commentId', async (req, res, next) => {
+  try {
+    const commentId = req.params.commentId;
+    const data = req.body;
+
+    if (!commentId) {
+      res.status(400).json({
+        success: false,
+        message: '댓글 아이디가 존재하지 않습니다.',
+      });
+    }
+
+    const updateData = await commentRepository.update(commentId, data);
+    res.status(200).json({
+      success: true,
+      data: updateData,
+      message: '댓글이 수정되었습니다.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+commentRouter.delete('/:commentId', async (req, res, next) => {
+  try {
+    const commentId = req.params.commentId;
+    if (!commentId) {
+      res.status(400).json({
+        success: false,
+        message: '댓글 아이디가 존재하지 않습니다.',
+      });
+    }
+
+    await commentRepository.remove(commentId);
+    res.status(200).json({
+      success: true,
+      message: '댓글 삭제에 성공했습니다.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});

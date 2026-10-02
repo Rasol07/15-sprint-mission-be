@@ -312,9 +312,9 @@ export type ArticleMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
-export type ArticleScalarRelationFilter = {
-  is?: Prisma.ArticleWhereInput
-  isNot?: Prisma.ArticleWhereInput
+export type ArticleNullableScalarRelationFilter = {
+  is?: Prisma.ArticleWhereInput | null
+  isNot?: Prisma.ArticleWhereInput | null
 }
 
 export type ArticleCreateNestedOneWithoutCommentsInput = {
@@ -323,10 +323,12 @@ export type ArticleCreateNestedOneWithoutCommentsInput = {
   connect?: Prisma.ArticleWhereUniqueInput
 }
 
-export type ArticleUpdateOneRequiredWithoutCommentsNestedInput = {
+export type ArticleUpdateOneWithoutCommentsNestedInput = {
   create?: Prisma.XOR<Prisma.ArticleCreateWithoutCommentsInput, Prisma.ArticleUncheckedCreateWithoutCommentsInput>
   connectOrCreate?: Prisma.ArticleCreateOrConnectWithoutCommentsInput
   upsert?: Prisma.ArticleUpsertWithoutCommentsInput
+  disconnect?: Prisma.ArticleWhereInput | boolean
+  delete?: Prisma.ArticleWhereInput | boolean
   connect?: Prisma.ArticleWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.ArticleUpdateToOneWithWhereWithoutCommentsInput, Prisma.ArticleUpdateWithoutCommentsInput>, Prisma.ArticleUncheckedUpdateWithoutCommentsInput>
 }

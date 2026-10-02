@@ -1,5 +1,6 @@
 import expressd from 'express';
 import { productRepository } from '../repositories/product.repository.js';
+import { commentRouter } from './comment_route.js';
 
 export const productRouter = expressd.Router();
 
@@ -113,3 +114,5 @@ productRouter.delete('/:productId', async (req, res, next) => {
     next(error);
   }
 });
+
+productRouter.use('/:productId/comments', commentRouter);

@@ -26,9 +26,10 @@ const makeArticleInput = () => ({
   content: fakerKO.lorem.paragraphs({ min: 10, max: 20 }),
 });
 
-const makeCommentsInput = (articleId) => ({
+const makeCommentsInput = (articleId = null, productId = null) => ({
   content: fakerKO.lorem.sentence({ min: 8, max: 20 }),
   articleId,
+  productId,
 });
 
 async function seed(prisma) {
@@ -49,8 +50,15 @@ async function seed(prisma) {
     data: articles,
     select: { id: true },
   });
+  const saveProducts = await prisma.product.createManyAndReturn({
+    data: products,
+    select: { id: true },
+  });
 
-  const comments = saveArticles.map((article) => makeCommentsInput(article.id));
+  const comments = [
+    ...saveArticles.map((article) => makeCommentsInput(article.id)),
+    ...saveProducts.map((product) => makeCommentsInput(null, product.id)),
+  ];
 
   await prisma.comment.createMany({
     data: comments,

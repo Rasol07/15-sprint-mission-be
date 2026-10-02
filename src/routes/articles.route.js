@@ -1,6 +1,7 @@
 import express from 'express';
 import { articlesRepository } from '../repositories/article.repository.js';
 import { success } from 'zod';
+import { commentRouter } from './comment_route.js';
 
 export const articleRouter = express.Router();
 
@@ -96,3 +97,5 @@ articleRouter.delete('/:articleId', async (req, res, next) => {
     next(error);
   }
 });
+
+articleRouter.use('/:articleId/comments', commentRouter);
